@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from PIL import Image
 import torch
+from tqdm import tqdm
 
 from models import Generator
 from models import Discriminator
@@ -85,7 +86,7 @@ transforms_ = [ transforms.Resize(int(opt.size*1.12), Image.BICUBIC),
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5)) ]
 dataloader = DataLoader(ImageDataset(opt.dataroot, transforms_=transforms_, unaligned=True), 
-                        batch_size=opt.batchSize, shuffle=True, num_workers=opt.n_cpu)
+                        batch_size=opt.batchSize, shuffle=False, num_workers=opt.n_cpu)
 
 # Loss plot
 # logger = Logger(opt.n_epochs, len(dataloader))
@@ -93,7 +94,7 @@ dataloader = DataLoader(ImageDataset(opt.dataroot, transforms_=transforms_, unal
 
 ###### Training ######
 for epoch in range(opt.epoch, opt.n_epochs):
-    for i, batch in enumerate(dataloader):
+    for batch in tqdm(dataloader):
         # Set model input
         real_A = Variable(input_A.copy_(batch['A']))
         real_B = Variable(input_B.copy_(batch['B']))
@@ -181,8 +182,8 @@ for epoch in range(opt.epoch, opt.n_epochs):
     lr_scheduler_D_B.step()
 
     # Save models checkpoints
-    torch.save(netG_A2B.state_dict(), 'output/netG_A2B.pth')
-    torch.save(netG_B2A.state_dict(), 'output/netG_B2A.pth')
-    torch.save(netD_A.state_dict(), 'output/netD_A.pth')
-    torch.save(netD_B.state_dict(), 'output/netD_B.pth')
+    torch.save(netG_A2B.state_dict(), './output/netG_A2B.pth')
+    torch.save(netG_B2A.state_dict(), './output/netG_B2A.pth')
+    torch.save(netD_A.state_dict(), './output/netD_A.pth')
+    torch.save(netD_B.state_dict(), './output/netD_B.pth')
 ###################################
