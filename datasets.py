@@ -5,6 +5,7 @@ import os
 from torch.utils.data import Dataset
 from PIL import Image
 import torchvision.transforms as transforms
+import torch
 
 class ImageDataset(Dataset):
     def __init__(self, root, transforms_=None, unaligned=False, mode='train'):
@@ -26,3 +27,30 @@ class ImageDataset(Dataset):
 
     def __len__(self):
         return max(len(self.files_A), len(self.files_B))
+
+class RamImageDataset(Dataset):
+        def __init__(self, root, transforms_=None, unaligned=False, mode='train'):
+            self.transform = transforms.Compose(transforms_)
+            self.unaligned = unaligned
+
+            self.files_A = sorted(glob.glob(os.path.join(root, '%s/A' % mode) + '/*.*'))
+            self.files_B = sorted(glob.glob(os.path.join(root, '%s/B' % mode) + '/*.*'))
+            self.tensors_A = []
+            self.tensors_B = []
+            for filename_A in self.files_A:
+                self.tensors_A.append(Image.open(filename_A))
+            for filename_B in self.files_B:
+                self.tensors_B.append(Image.open(filename_B))
+
+        def __getitem__(self, index):
+            item_A = self.transform(self.tensors_A[index % len(self.files_A)])
+
+            if self.unaligned:
+                item_B = self.transform(self.tensors_B[random.randint(0, len(self.files_B) - 1)])
+            else:
+                item_B = self.transform(self.tensors_B[index % len(self.files_B)])
+
+            return {'A': item_A, 'B': item_B}
+
+        def __len__(self):
+            return max(len(self.files_A), len(self.files_B))

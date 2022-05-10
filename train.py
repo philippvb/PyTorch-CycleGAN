@@ -18,7 +18,7 @@ from utils import ReplayBuffer
 from utils import LambdaLR
 # from utils import Logger
 from utils import weights_init_normal
-from datasets import ImageDataset
+from datasets import ImageDataset, RamImageDataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epoch', type=int, default=0, help='starting epoch')
@@ -87,7 +87,7 @@ transforms_ = [ transforms.Resize(int(opt.size*1.12), Image.BICUBIC),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5)) ]
-dataset = ImageDataset(opt.dataroot, transforms_=transforms_, unaligned=True)
+dataset = RamImageDataset(opt.dataroot, transforms_=transforms_, unaligned=True)
 train_size = len(dataset)
 train_set, val_set = random_split(dataset, [train_size, len(dataset) - train_size])
 dataloader = DataLoader(train_set, 
