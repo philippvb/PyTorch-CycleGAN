@@ -1,14 +1,16 @@
 #!/usr/bin/python3
 
 import argparse
+from dataclasses import dataclass
 import itertools
 
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from torch.autograd import Variable
 from PIL import Image
 import torch
 from tqdm import tqdm
+import pandas as pd
 
 from models import Generator
 from models import Discriminator
@@ -85,11 +87,16 @@ transforms_ = [ transforms.Resize(int(opt.size*1.12), Image.BICUBIC),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5)) ]
-dataloader = DataLoader(ImageDataset(opt.dataroot, transforms_=transforms_, unaligned=True), 
-                        batch_size=opt.batchSize, shuffle=False, num_workers=opt.n_cpu)
+dataset = ImageDataset(opt.dataroot, transforms_=transforms_, unaligned=True)
+train_size = len(dataset)
+train_set, val_set = random_split(dataset, [train_size, len(dataset) - train_size])
+dataloader = DataLoader(train_set, 
+                        batch_size=opt.batchSize, shuffle=False)#, num_workers=opt.n_cpu)
 
 # Loss plot
 # logger = Logger(opt.n_epochs, len(dataloader))
+log_data = pd.DataFrame(columns=['loss_G', 'loss_G_identity', 'loss_G_GAN',
+                    'loss_G_cycle', 'loss_D'])
 ###################################
 
 ###### Training ######
@@ -172,6 +179,12 @@ for epoch in range(opt.epoch, opt.n_epochs):
         ###################################
 
         # Progress report (http://localhost:8097)
+        with torch.no_grad():
+            epoch_hist = {'loss_G': loss_G, 'loss_G_identity': (loss_identity_A + loss_identity_B), 'loss_G_GAN': (loss_GAN_A2B + loss_GAN_B2A), 'loss_G_cycle': (loss_cycle_ABA + loss_cycle_BAB), 'loss_D': (loss_D_A + loss_D_B)}
+            epoch_hist = {key: [round(value.detach().cpu().item(), 4)] for key, value in epoch_hist.items()}
+            log_data = log_data.append(pd.DataFrame(epoch_hist))
+        log_data.to_csv("./output/history.csv", index=False)
+        #             'loss_G_cycle': (loss_cycle_ABA + loss_cycle_BAB), 'loss_D': (loss_D_A + loss_D_B)}))
         # logger.log({'loss_G': loss_G, 'loss_G_identity': (loss_identity_A + loss_identity_B), 'loss_G_GAN': (loss_GAN_A2B + loss_GAN_B2A),
         #             'loss_G_cycle': (loss_cycle_ABA + loss_cycle_BAB), 'loss_D': (loss_D_A + loss_D_B)}, 
         #             images={'real_A': real_A, 'real_B': real_B, 'fake_A': fake_A, 'fake_B': fake_B})
