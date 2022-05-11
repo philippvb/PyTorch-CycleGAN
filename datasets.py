@@ -54,14 +54,14 @@ class RamImageDataset(Dataset):
                     print(f"WARNING: The image {filename_B} seems to be grayscale, thus skipping.")
 
         def __getitem__(self, index):
-            item_A = self.transform(self.tensors_A[index % len(self.tensors_A)])
+            item_A = self.transform(self.tensors_A[index])
 
             if self.unaligned:
                 item_B = self.transform(self.tensors_B[random.randint(0, len(self.tensors_B) - 1)])
             else:
-                item_B = self.transform(self.tensors_B[index % len(self.tensors_B)])
+                item_B = self.transform(self.tensors_B[index])
 
             return {'A': item_A, 'B': item_B}
 
         def __len__(self):
-            return max(len(self.tensors_A), len(self.tensors_B))
+            return min(len(self.tensors_A), len(self.tensors_B))
