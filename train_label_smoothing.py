@@ -4,7 +4,7 @@ import argparse
 import itertools
 
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from torch.autograd import Variable
 from PIL import Image
 import torch
@@ -16,7 +16,7 @@ from utils import ReplayBuffer
 from utils import LambdaLR
 # from utils import Logger
 from utils import weights_init_normal
-from datasets import ImageDataset
+from datasets import ImageDataset, RamImageDataset
 import os
 
 parser = argparse.ArgumentParser()
@@ -31,6 +31,7 @@ parser.add_argument('--input_nc', type=int, default=3, help='number of channels 
 parser.add_argument('--output_nc', type=int, default=3, help='number of channels of output data')
 parser.add_argument('--cuda', action='store_true', help='use GPU computation')
 parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads to use during batch generation')
+parser.add_argument('--split', type=float, default=1, help='Train/Val split')
 parser.add_argument('--output_dir', type=str, default="./output/", help='The output directory to save the model to')
 opt = parser.parse_args()
 print(opt)
@@ -88,7 +89,10 @@ transforms_ = [ transforms.Resize(int(opt.size*1.12), Image.BICUBIC),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5)) ]
-dataloader = DataLoader(ImageDataset(opt.dataroot, transforms_=transforms_, unaligned=True), 
+dataset = RamImageDataset(opt.dataroot, transforms_=transforms_, unaligned=opt.split == 1) # if there exists a split, then we dont want to take random samples from the dataloder
+train_size = int(len(dataset) * opt.split)
+train_set, val_set = random_split(dataset, [train_size, len(dataset) - train_size])
+dataloader = DataLoader(train_set, 
                         batch_size=opt.batchSize, shuffle=False)#, num_workers=opt.n_cpu)
 
 # Loss plot
