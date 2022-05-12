@@ -12,6 +12,8 @@ from tqdm import tqdm
 import pandas as pd
 import os
 
+from zmq import device
+
 from models import Generator
 from models import Discriminator
 from utils import ReplayBuffer
@@ -41,12 +43,14 @@ print(opt)
 if torch.cuda.is_available() and not opt.cuda:
     print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
+tensor_device = "cuda" if opt.cuda else "cpu"
+
 ###### Definition of variables ######
 # Networks
-netG_A2B = Generator(opt.input_nc, opt.output_nc)
-netG_B2A = Generator(opt.output_nc, opt.input_nc)
-netD_A = Discriminator(opt.input_nc)
-netD_B = Discriminator(opt.output_nc)
+netG_A2B = Generator(opt.input_nc, opt.output_nc).to(tensor_device)
+netG_B2A = Generator(opt.output_nc, opt.input_nc).to(tensor_device)
+netD_A = Discriminator(opt.input_nc).to(tensor_device)
+netD_B = Discriminator(opt.output_nc).to(tensor_device)
 
 # load variables
 if opt.load_dir:
@@ -60,11 +64,6 @@ if opt.load_dir:
 if not os.path.exists(opt.output_dir):
     os.makedirs(opt.output_dir)
 
-if opt.cuda:
-    netG_A2B.cuda()
-    netG_B2A.cuda()
-    netD_A.cuda()
-    netD_B.cuda()
 
 netG_A2B.apply(weights_init_normal)
 netG_B2A.apply(weights_init_normal)
@@ -87,12 +86,9 @@ lr_scheduler_D_A = torch.optim.lr_scheduler.LambdaLR(optimizer_D_A, lr_lambda=La
 lr_scheduler_D_B = torch.optim.lr_scheduler.LambdaLR(optimizer_D_B, lr_lambda=LambdaLR(opt.n_epochs, opt.epoch, opt.decay_epoch).step)
 
 # Inputs & targets memory allocation
-Tensor = torch.cuda.FloatTensor if opt.cuda else torch.Tensor
-input_A = Tensor(opt.batchSize, opt.input_nc, opt.size, opt.size)
-input_B = Tensor(opt.batchSize, opt.output_nc, opt.size, opt.size)
 smooth = 0.9
-target_real = torch.full((opt.batchSize, 1), fill_value=smooth).float()
-target_fake = torch.full_like(target_real, fill_value=1 - smooth).float()
+target_real = torch.full((opt.batchSize, 1), fill_value=smooth).float().to(tensor_device)
+target_fake = torch.full_like(target_real, fill_value=1 - smooth).float().to(tensor_device)
 
 fake_A_buffer = ReplayBuffer()
 fake_B_buffer = ReplayBuffer()
@@ -120,8 +116,8 @@ for epoch in range(opt.epoch, opt.n_epochs):
                         'loss_G_cycle', 'loss_D'])
     for batch in tqdm(dataloader):
         # Set model input
-        real_A = Variable(input_A.copy_(batch['A']))
-        real_B = Variable(input_B.copy_(batch['B']))
+        real_A = batch['A'].to(tensor_device)
+        real_B = batch['B'].to(tensor_device)
 
         ###### Generators A2B and B2A ######
         optimizer_G.zero_grad()
