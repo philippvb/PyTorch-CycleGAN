@@ -5,14 +5,11 @@ import itertools
 
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, random_split
-from torch.autograd import Variable
 from PIL import Image
 import torch
 from tqdm import tqdm
 import pandas as pd
 import os
-
-from zmq import device
 
 from models import Generator
 from models import Discriminator
@@ -20,7 +17,7 @@ from utils import ReplayBuffer
 from utils import LambdaLR
 # from utils import Logger
 from utils import weights_init_normal
-from datasets import ImageDataset, RamImageDataset
+from datasets import RamImageDataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epoch', type=int, default=0, help='starting epoch')
@@ -37,6 +34,7 @@ parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads 
 parser.add_argument('--split', type=float, default=1, help='Train/Val split')
 parser.add_argument('--output_dir', type=str, default="./output/", help='The output directory to save the model to')
 parser.add_argument('--load_dir', type=str, default=None, help='If provided, loads the model from that directory')
+parser.add_argument('--cycle_factor', type=float, default=10.0, help='The cycle factor to use')
 opt = parser.parse_args()
 print(opt)
 
@@ -141,10 +139,10 @@ for epoch in range(opt.epoch, opt.n_epochs):
 
         # Cycle loss
         recovered_A = netG_B2A(fake_B)
-        loss_cycle_ABA = criterion_cycle(recovered_A, real_A)*10.0
+        loss_cycle_ABA = criterion_cycle(recovered_A, real_A)*opt.cycle_factor
 
         recovered_B = netG_A2B(fake_A)
-        loss_cycle_BAB = criterion_cycle(recovered_B, real_B)*10.0
+        loss_cycle_BAB = criterion_cycle(recovered_B, real_B)*opt.cycle_factor
 
         # Total loss
         loss_G = loss_identity_A + loss_identity_B + loss_GAN_A2B + loss_GAN_B2A + loss_cycle_ABA + loss_cycle_BAB
