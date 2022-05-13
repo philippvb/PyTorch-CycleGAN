@@ -11,8 +11,7 @@ from tqdm import tqdm
 import pandas as pd
 import os
 
-from models import Generator
-from models import Discriminator
+from models_Felicias import Generator, Discriminator
 from utils import ReplayBuffer
 from utils import LambdaLR
 # from utils import Logger
@@ -35,6 +34,7 @@ parser.add_argument('--split', type=float, default=1, help='Train/Val split')
 parser.add_argument('--output_dir', type=str, default="./output/", help='The output directory to save the model to')
 parser.add_argument('--load_dir', type=str, default=None, help='If provided, loads the model from that directory')
 parser.add_argument('--cycle_factor', type=float, default=10.0, help='The cycle factor to use')
+parser.add_argument('--smooth', type=float, default=1, help='Smoothing factor')
 opt = parser.parse_args()
 print(opt)
 
@@ -63,10 +63,16 @@ if not os.path.exists(opt.output_dir):
     os.makedirs(opt.output_dir)
 
 
+# init and set all models to train mode
 netG_A2B.apply(weights_init_normal)
 netG_B2A.apply(weights_init_normal)
 netD_A.apply(weights_init_normal)
 netD_B.apply(weights_init_normal)
+
+netG_A2B.train()
+netG_B2A.train()
+netD_A.train()
+netD_B.train()
 
 # Lossess
 criterion_GAN = torch.nn.MSELoss()
@@ -84,7 +90,7 @@ lr_scheduler_D_A = torch.optim.lr_scheduler.LambdaLR(optimizer_D_A, lr_lambda=La
 lr_scheduler_D_B = torch.optim.lr_scheduler.LambdaLR(optimizer_D_B, lr_lambda=LambdaLR(opt.n_epochs, opt.epoch, opt.decay_epoch).step)
 
 # Inputs & targets memory allocation
-smooth = 0.9
+smooth = opt.smooth
 target_real = torch.full((opt.batchSize, 1), fill_value=smooth).float().to(tensor_device)
 target_fake = torch.full_like(target_real, fill_value=1 - smooth).float().to(tensor_device)
 
