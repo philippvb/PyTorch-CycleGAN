@@ -11,7 +11,7 @@ from tqdm import tqdm
 import pandas as pd
 import os
 
-from models_Felicias import Generator, Discriminator
+from models import Generator, Discriminator
 from utils import ReplayBuffer
 from utils import LambdaLR
 # from utils import Logger
@@ -75,7 +75,7 @@ netD_A.train()
 netD_B.train()
 
 # Lossess
-criterion_GAN = torch.nn.MSELoss()
+criterion_GAN = torch.nn.BCEWithLogitsLoss()
 criterion_cycle = torch.nn.L1Loss()
 criterion_identity = torch.nn.L1Loss()
 
