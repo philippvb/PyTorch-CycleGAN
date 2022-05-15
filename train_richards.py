@@ -196,8 +196,8 @@ for epoch in range(opt.epoch, opt.n_epochs):
     lr_scheduler_D_B.step()
 
     # Save models checkpoints
-    torch.save(netG_A2B.state_dict(), './output/netG_A2B.pth')
-    torch.save(netG_B2A.state_dict(), './output/netG_B2A.pth')
-    torch.save(netD_A.state_dict(), './output/netD_A.pth')
-    torch.save(netD_B.state_dict(), './output/netD_B.pth')
+    torch.save(netG_A2B.state_dict(), './output/netG_A2B_adam.pth')
+    torch.save(netG_B2A.state_dict(), './output/netG_B2A_adam.pth')
+    torch.save(netD_A.state_dict(), './output/netD_A_adam.pth')
+    torch.save(netD_B.state_dict(), './output/netD_B_adam.pth')
 ###################################
