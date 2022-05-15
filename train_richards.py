@@ -12,8 +12,8 @@ import torch
 from tqdm import tqdm
 import pandas as pd
 
-from models import Generator
-from models import Discriminator
+from models_Felicias import Generator
+from models_Felicias import Discriminator
 from utils import ReplayBuffer
 from utils import LambdaLR
 # from utils import Logger
