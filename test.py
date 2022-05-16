@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import torch
 
-from models import Generator
+from models_Felicias import Generator
 from datasets import ImageDataset
 
 parser = argparse.ArgumentParser()
